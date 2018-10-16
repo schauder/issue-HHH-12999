@@ -22,12 +22,20 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
 import org.junit.Test;
 
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * This template demonstrates how to develop a test case for Hibernate ORM, using its built-in unit test framework.
  * Although ORMStandaloneTestCase is perfectly acceptable as a reproducer, usage of this class is much preferred.
  * Since we nearly always include a regression test with bug fixes, providing your reproducer using this method
  * simplifies the process.
- *
+ * <p>
  * What's even better?  Fork hibernate-orm itself, add your test case directly to a module's unit tests, then
  * submit it as a PR!
  */
@@ -36,44 +44,58 @@ public class ORMUnitTestCase extends BaseCoreFunctionalTestCase {
 	// Add your entities here.
 	@Override
 	protected Class[] getAnnotatedClasses() {
-		return new Class[] {
-//				Foo.class,
-//				Bar.class
+		return new Class[]{
+				Parent.class,
+				Child.class
 		};
-	}
-
-	// If you use *.hbm.xml mappings, instead of annotations, add the mappings here.
-	@Override
-	protected String[] getMappings() {
-		return new String[] {
-//				"Foo.hbm.xml",
-//				"Bar.hbm.xml"
-		};
-	}
-	// If those mappings reside somewhere other than resources/org/hibernate/test, change this.
-	@Override
-	protected String getBaseForMappings() {
-		return "org/hibernate/test/";
 	}
 
 	// Add in any settings that are specific to your test.  See resources/hibernate.properties for the defaults.
 	@Override
 	protected void configure(Configuration configuration) {
-		super.configure( configuration );
+		super.configure(configuration);
 
-		configuration.setProperty( AvailableSettings.SHOW_SQL, Boolean.TRUE.toString() );
-		configuration.setProperty( AvailableSettings.FORMAT_SQL, Boolean.TRUE.toString() );
+		configuration.setProperty(AvailableSettings.SHOW_SQL, Boolean.TRUE.toString());
+		configuration.setProperty(AvailableSettings.FORMAT_SQL, Boolean.TRUE.toString());
 		//configuration.setProperty( AvailableSettings.GENERATE_STATISTICS, "true" );
 	}
 
 	// Add your tests, using standard JUnit.
 	@Test
-	public void hhh123Test() throws Exception {
+	public void hhh12999Test() throws Exception {
 		// BaseCoreFunctionalTestCase automatically creates the SessionFactory and provides the Session.
 		Session s = openSession();
 		Transaction tx = s.beginTransaction();
-		// Do stuff...
-		tx.commit();
+
+
+		Parent parentWithoutChild = new Parent();
+
+		Parent parentWithChild = new Parent();
+		parentWithChild.setChild(new Child());
+
+		s.persist(parentWithChild.getChild());
+		s.persist(parentWithChild);
+		s.persist(parentWithoutChild);
+
+		s.flush();
+
+		CriteriaBuilder cb = s.getCriteriaBuilder();
+
+		CriteriaQuery<Projection> cq = cb.createQuery(Projection.class);
+		Root<Parent> parentRoot = cq.from(Parent.class);
+		cq.multiselect(parentRoot.get("id"), parentRoot.get("child"));
+
+		TypedQuery<Projection> typedQuery = s.createQuery(cq);
+		List<Projection> result = typedQuery.getResultList();
+
+		assertThat(result)
+				.extracting(Projection::getId)
+				.containsExactlyInAnyOrder(
+						parentWithChild.getId(),
+						parentWithoutChild.getId()
+				);
+
+		tx.rollback();
 		s.close();
 	}
 }
