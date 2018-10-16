@@ -1,12 +1,16 @@
-# Hibernate Test Case Templates
+# Hibernate Test Case Templates: ORM
 
-When creating a bug report for any project within the Hibernate family, it's extremely helpful (and, frankly, required)
-to have an adequate test case available.  This is obviously important to make reproducing the issue as easy as
-possible.  But it's also vital longer-term.  Nearly every bug fix should include a regression test, which frequently is based
-on the original reproducer (sometimes, it's the reproducer, verbatim).
+This repo contains test case templates, useful for reporting bugs against Hibernate ORM.
 
-To help create useful test cases, we're opening up this repo with various templates.  Please see the READMEs in each
-project's subdir for more info.
+Here's a running list of what's available (there are two versions of each test case template, one is for Hibernate ORM 4,
+one for Hibernate ORM 5):
 
-As always, this is open source for a reason!  If these templates can be improved in any way, please let us know (either
-through our JIRA instance or through GitHub Issues).  Better yet, send us a pull request!
+* ORMUnitTestCase: By far, this one's the most helpful.  ORM includes a built-in unit test framework that does much
+of the heavy lifting for you.  All that's required is your entities, logic, and any necessary settings.  Since we nearly
+always include a regression test with bug fixes, providing your reproducer using this method simplifies the process.  We
+can then directly commit it, without having to mold it in first.  What's even better?  Fork hibernate-orm itself,
+add your test case directly to a module's unit tests (using the template class), then submit it as a PR!
+* ORMStandaloneTestCase: This template is standalone and will look familiar.  It simply uses a run-of-the-mill ORM setup.
+Although it's perfectly acceptable as a reproducer, lean towards ORMUnitTestCase whenever possible.
+
+**For a detailed step-by-step tutorial about how you should be using our test case templates check out the [following article](http://in.relation.to/2016/01/14/hibernate-jpa-test-case-template/)**.
