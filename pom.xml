@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.hibernate.testcasetemplate</groupId>
-	<artifactId>test-case-template-hibernate-orm5</artifactId>
+	<artifactId>issue-HHH-12999-superfluous-join</artifactId>
 	<version>1.0.0.Final</version>
-	<name>Hibernate ORM 5 Test Case Template</name>
+	<name>issue-HHH-12999-superfluous-join</name>
 
 	<properties>
 		<version.com.h2database>1.3.176</version.com.h2database>

@@ -22,13 +22,16 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
 import org.junit.Test;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import java.util.List;
+import java.util.function.Function;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.groups.Tuple.tuple;
 
 /**
  * This template demonstrates how to develop a test case for Hibernate ORM, using its built-in unit test framework.
@@ -62,7 +65,52 @@ public class ORMUnitTestCase extends BaseCoreFunctionalTestCase {
 
 	// Add your tests, using standard JUnit.
 	@Test
-	public void hhh12999Test() throws Exception {
+	public void hhh12999CriteriaBasedTest() throws Exception {
+
+		checkWithSession(s -> {
+
+					CriteriaBuilder cb = s.getCriteriaBuilder();
+
+					CriteriaQuery<Projection> cq = cb.createQuery(Projection.class);
+					Root<Parent> parentRoot = cq.from(Parent.class);
+					cq.multiselect(parentRoot.get("id"), parentRoot.get("child"));
+
+					TypedQuery<Projection> typedQuery = s.createQuery(cq);
+					return typedQuery.getResultList();
+				},
+				Projection::getId);
+	}
+
+	@Test
+	public void hhh12999QlBasedTest() throws Exception {
+
+		checkWithSession(s -> {
+					return (List<Object[]>) s.createQuery("select p.id, p.child from Parent p").list();
+				},
+				(Object[] a) -> a[0]);
+
+	}
+
+	@Test
+	public void hhh12999TupleBasedTest() throws Exception {
+
+		checkWithSession(s -> {
+
+					CriteriaBuilder cb = s.getCriteriaBuilder();
+
+					CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+					Root<Parent> parentRoot = cq.from(Parent.class);
+					cq.multiselect(parentRoot.get("id"), parentRoot.get("child"));
+
+					TypedQuery<Tuple> typedQuery = s.createQuery(cq);
+					return typedQuery.getResultList();
+				},
+				t -> t.get(0)
+		);
+	}
+
+
+	private <T> void checkWithSession(Function<Session, List<T>> query, Function<T, ?> extractor) throws Exception {
 		// BaseCoreFunctionalTestCase automatically creates the SessionFactory and provides the Session.
 		Session s = openSession();
 		Transaction tx = s.beginTransaction();
@@ -79,20 +127,13 @@ public class ORMUnitTestCase extends BaseCoreFunctionalTestCase {
 
 		s.flush();
 
-		CriteriaBuilder cb = s.getCriteriaBuilder();
-
-		CriteriaQuery<Projection> cq = cb.createQuery(Projection.class);
-		Root<Parent> parentRoot = cq.from(Parent.class);
-		cq.multiselect(parentRoot.get("id"), parentRoot.get("child"));
-
-		TypedQuery<Projection> typedQuery = s.createQuery(cq);
-		List<Projection> result = typedQuery.getResultList();
+		List<T> result = query.apply(s);
 
 		assertThat(result)
-				.extracting(Projection::getId)
+				.extracting(extractor)
 				.containsExactlyInAnyOrder(
-						parentWithChild.getId(),
-						parentWithoutChild.getId()
+						tuple(parentWithChild.getId()),
+						tuple(parentWithoutChild.getId())
 				);
 
 		tx.rollback();
